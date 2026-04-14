@@ -42,3 +42,13 @@
 
 * Timestamp columns converted successfully to datetime format
 * Cleaned orders table exported to processed folder
+
+## First Join Completed
+
+* Orders table successfully joined with order_items using `order_id`
+* Row count increased as expected due to one-to-many relationship
+
+## Join Validation
+
+* Repeated order_id values observed for multi-item orders
+* Price and freight columns now available for order-level enrichment
