@@ -63,3 +63,10 @@
 * Revenue by city and state
 * Delivery performance by region
 * Customer concentration analysis
+
+
+## Missing Product Metadata
+
+* `product_category_name` contains 1603 missing values after product merge
+* Sales rows were preserved using left join
+* Missing category labels will need treatment before category-level analysis
