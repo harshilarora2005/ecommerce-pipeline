@@ -52,3 +52,14 @@
 
 * Repeated order_id values observed for multi-item orders
 * Price and freight columns now available for order-level enrichment
+
+## Customer Join Completed
+
+* Customer information successfully merged using `customer_id`
+* Geographic fields now available for regional analysis
+
+## New Analytical Possibilities
+
+* Revenue by city and state
+* Delivery performance by region
+* Customer concentration analysis
