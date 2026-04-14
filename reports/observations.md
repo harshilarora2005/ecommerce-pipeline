@@ -1,0 +1,34 @@
+# Initial Dataset Observations
+
+## Tables Loaded
+
+* orders
+* order_items
+* customers
+
+## Shape Summary
+
+* Orders table contains order-level transaction records
+* Order items table contains product-level entries per order
+* Customers table contains customer location identifiers
+
+## Key Join Columns Identified
+
+* `order_id` links orders ↔ order_items
+* `customer_id` links orders ↔ customers
+
+## Datatype Observations
+
+* Timestamp columns in orders are currently stored as object datatype
+* Numeric columns in order_items appear ready for aggregation
+
+## Missing Values
+
+* Orders table contains null values in delivery-related columns
+* These nulls likely correspond to undelivered or cancelled orders
+
+## Immediate ETL Implications
+
+* Timestamp conversion is required before delivery analysis
+* Null handling strategy must be decided before feature engineering
+* Join integrity should be checked before building master table
