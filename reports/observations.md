@@ -32,3 +32,13 @@
 * Timestamp conversion is required before delivery analysis
 * Null handling strategy must be decided before feature engineering
 * Join integrity should be checked before building master table
+
+## Derived Features Created
+
+* `delivery_days` calculated from purchase to delivery date
+* `is_late` created by comparing actual delivery date with estimated delivery date
+
+## Cleaning Progress
+
+* Timestamp columns converted successfully to datetime format
+* Cleaned orders table exported to processed folder
