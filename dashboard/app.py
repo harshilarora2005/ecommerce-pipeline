@@ -236,7 +236,7 @@ def load_master() -> pd.DataFrame:
 
 def apply_filters(df: pd.DataFrame) -> pd.DataFrame:
     """Apply sidebar filters and cache result in session_state."""
-    st.sidebar.markdown('<p class="sidebar-section">📅 Time Range</p>', unsafe_allow_html=True)
+    st.sidebar.markdown('<p class="sidebar-section">Time Range</p>', unsafe_allow_html=True)
     ts = df["order_purchase_timestamp"].dropna()
     min_d, max_d = ts.min().date(), ts.max().date()
     date_range = st.sidebar.date_input(
@@ -248,27 +248,27 @@ def apply_filters(df: pd.DataFrame) -> pd.DataFrame:
     else:
         d0, d1 = min_d, max_d
 
-    st.sidebar.markdown('<p class="sidebar-section">🗺️ Customer State</p>', unsafe_allow_html=True)
+    st.sidebar.markdown('<p class="sidebar-section">Customer State</p>', unsafe_allow_html=True)
     states = sorted(df["customer_state"].dropna().unique().tolist())
     sel_states = st.sidebar.multiselect("States", states, default=states,
-                                         label_visibility="collapsed")
+                                        label_visibility="collapsed")
     if not sel_states:
         sel_states = states
 
-    st.sidebar.markdown('<p class="sidebar-section">📦 Category</p>', unsafe_allow_html=True)
+    st.sidebar.markdown('<p class="sidebar-section">Category</p>', unsafe_allow_html=True)
     cats = sorted(df["product_category_name"].dropna().unique().tolist())
     sel_cats = st.sidebar.multiselect("Categories", cats, default=[],
-                                       placeholder="All categories",
-                                       label_visibility="collapsed")
+                                    placeholder="All categories",
+                                    label_visibility="collapsed")
 
-    st.sidebar.markdown('<p class="sidebar-section">⭐ Min Review Score</p>', unsafe_allow_html=True)
+    st.sidebar.markdown('<p class="sidebar-section">Min Review Score</p>', unsafe_allow_html=True)
     min_review = st.sidebar.slider("Min review", 1.0, 5.0, 1.0, 0.5,
                                     label_visibility="collapsed")
 
-    st.sidebar.markdown('<p class="sidebar-section">📋 Order Status</p>', unsafe_allow_html=True)
+    st.sidebar.markdown('<p class="sidebar-section">Order Status</p>', unsafe_allow_html=True)
     statuses = sorted(df["order_status"].dropna().unique().tolist()) if "order_status" in df.columns else []
     sel_status = st.sidebar.multiselect("Status", statuses, default=statuses,
-                                         label_visibility="collapsed") if statuses else statuses
+                                        label_visibility="collapsed") if statuses else statuses
 
     # Build mask
     mask = (
