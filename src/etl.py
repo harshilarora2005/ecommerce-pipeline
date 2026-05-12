@@ -1,22 +1,8 @@
-"""ETL pipeline for the Olist Brazilian e-commerce dataset.
-
-High-priority fixes applied vs. original:
-  - sellers table loaded and joined (seller city/state)
-  - All 7 tables written to SQLite (was only 3)
-  - profit_margin, order_size, review_sentiment, item_count added to build_master()
-  - product_name_lenght typo fixed in clean_products()
-  - Divide-by-zero guard on profit_margin
-"""
 from __future__ import annotations
-
 from pathlib import Path
-import logging
-
 import pandas as pd
 from sqlalchemy import create_engine
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
-log = logging.getLogger("etl")
 
 ROOT = Path(__file__).resolve().parents[1]
 RAW_DIR = ROOT / "data" / "raw"
@@ -32,10 +18,6 @@ DATE_COLS = [
 ]
 
 
-# ---------------------------------------------------------------------------
-# Loaders
-# ---------------------------------------------------------------------------
-
 def load_raw(name: str) -> pd.DataFrame:
     """Load a raw Olist CSV by short name (e.g. 'orders', 'order_items')."""
     path = RAW_DIR / f"olist_{name}_dataset.csv"
@@ -45,13 +27,8 @@ def load_raw(name: str) -> pd.DataFrame:
             path = alt
         else:
             raise FileNotFoundError(f"Missing raw file: {path}")
-    log.info(f"Loading {path.name}")
     return pd.read_csv(path)
 
-
-# ---------------------------------------------------------------------------
-# Cleaners
-# ---------------------------------------------------------------------------
 
 def clean_orders(orders: pd.DataFrame) -> pd.DataFrame:
     """Parse dates and derive delivery / lateness columns."""
@@ -104,9 +81,6 @@ def aggregate_reviews(reviews: pd.DataFrame) -> pd.DataFrame:
     ).reset_index()
 
 
-# ---------------------------------------------------------------------------
-# Feature engineering helpers
-# ---------------------------------------------------------------------------
 
 def _classify_order_size(n: int) -> str:
     if n == 1:      return "Small"
@@ -115,7 +89,7 @@ def _classify_order_size(n: int) -> str:
 
 
 def _classify_sentiment(score: float) -> str | float:
-    if pd.isna(score):  return pd.NA
+    if pd.isna(score):  return pd.NA # type: ignore
     elif score >= 4:    return "positive"
     elif score == 3:    return "neutral"
     else:               return "negative"
@@ -162,7 +136,7 @@ def build_master(
         items
         .merge(orders,    on="order_id",   how="left")
         .merge(customers, on="customer_id", how="left")
-        .merge(sellers,   on="seller_id",  how="left")   # NEW: seller city/state
+        .merge(sellers,   on="seller_id",  how="left")  
         .merge(pay,       on="order_id",   how="left")
         .merge(products,  on="product_id", how="left")
         .merge(rev,       on="order_id",   how="left")
@@ -176,7 +150,6 @@ def build_master(
         df.drop(columns=["product_category_name_english"], inplace=True, errors="ignore")
 
     df = enrich_master(df)
-    log.info(f"Master shape: {df.shape}")
     return df
 
 
@@ -186,7 +159,6 @@ def build_master(
 
 def to_sqlite(df: pd.DataFrame, table: str, engine) -> None:
     df.to_sql(table, engine, if_exists="replace", index=False)
-    log.info(f"Wrote {len(df):,} rows → table '{table}'")
 
 
 # ---------------------------------------------------------------------------
@@ -208,7 +180,6 @@ def run_pipeline() -> pd.DataFrame:
         translation = load_raw("product_category_name_translation")
     except FileNotFoundError:
         translation = None
-        log.warning("Category translation CSV not found — using Portuguese names")
 
     # Build master
     master = build_master(orders, items, customers, sellers, payments, products, reviews, translation)
