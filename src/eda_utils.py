@@ -6,8 +6,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 
-# ---- Aggregations ---------------------------------------------------------
-
 def revenue_by_category(df: pd.DataFrame, top_n: int = 15) -> pd.DataFrame:
     return (
         df.groupby("product_category_name", dropna=True)["revenue"]
@@ -61,9 +59,6 @@ def payment_breakdown(df: pd.DataFrame) -> pd.DataFrame:
         .agg(orders=("order_id", "nunique"), revenue=("payment_value", "sum"))
         .reset_index()
     )
-
-
-# ---- Charts ---------------------------------------------------------------
 
 def chart_revenue_by_category(df: pd.DataFrame, top_n: int = 15) -> go.Figure:
     data = revenue_by_category(df, top_n)
