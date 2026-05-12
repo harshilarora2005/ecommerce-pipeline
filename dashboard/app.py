@@ -65,9 +65,12 @@ html, body, [data-testid="stAppViewContainer"] {
 }
 [data-testid="stMetricValue"] {
   font-family: 'Syne', sans-serif !important;
-  font-size: 1.9rem !important;
+  font-size: clamp(1.1rem, 1.4vw, 1.6rem) !important;
   font-weight: 800 !important;
   color: var(--text) !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 [data-testid="stMetricLabel"] {
   font-family: 'DM Mono', monospace !important;
@@ -362,6 +365,15 @@ def show_empty_filter_warning(total: int):
 
 
 # ── KPI helpers ────────────────────────────────────────────────────────────────
+def fmt_revenue(v: float) -> str:
+    """Auto-scale R$ values: K / M / B so they never clip."""
+    if v >= 1_000_000_000:
+        return f"R$ {v/1_000_000_000:,.2f}B"
+    if v >= 1_000_000:
+        return f"R$ {v/1_000_000:,.2f}M"
+    if v >= 1_000:
+        return f"R$ {v/1_000:,.1f}K"
+    return f"R$ {v:,.2f}"
 def safe_pct_delta(a, b) -> float | None:
     """Percentage change from b → a."""
     try:
@@ -385,7 +397,7 @@ def kpi_row(filtered: pd.DataFrame, full: pd.DataFrame):
 
     c1, c2, c3, c4, c5 = st.columns(5)
     c1.metric("💰 Revenue",
-              f"R$ {rev_f/1_000:,.1f}K",
+              fmt_revenue(rev_f),
               delta=f"{safe_pct_delta(rev_f, rev_a):+.1f}% vs all" if safe_pct_delta(rev_f, rev_a) else None)
     c2.metric("📦 Orders",
               f"{ord_f:,}",
@@ -403,10 +415,8 @@ def kpi_row(filtered: pd.DataFrame, full: pd.DataFrame):
 # Brand header
 st.markdown("""
 <div class="brand-strip">
-  <span class="brand-name">Olist Intelligence</span>
-  <span class="brand-tag">v2.0</span>
+    <span class="brand-name">Olist Intelligence</span>
 </div>
-<p class="brand-sub">Brazilian E-Commerce · ETL → EDA → RFM → Forecast · Filtered view</p>
 """, unsafe_allow_html=True)
 
 df_full = load_master()
