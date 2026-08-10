@@ -47,6 +47,34 @@ later switch to AWS's Paid plan and want the $300 Redshift Serverless trial —
 same star schema, loaded via `COPY` instead of CTAS. Not needed for the
 default path above.
 
+## Running the existing Streamlit dashboard against Athena
+
+`dashboard/data_source.py` toggles between SQLite (default) and Athena via
+an env var, so the existing app/pages don't need further changes:
+
+```bash
+pip install "pyathena[pandas]"
+
+export DATA_SOURCE=athena
+export ATHENA_S3_STAGING_DIR=s3://your-bucket-name/athena-results/
+export ATHENA_REGION=your-region      # e.g. ap-south-1
+
+streamlit run dashboard/app.py
+```
+
+Behind the scenes it queries `olist.fact_order_items` joined back to the
+three dimension tables, reconstructing the same flat shape the pages already
+expect — so `overview.py`, `customers.py`, `geo_map.py`, and `products.py`
+work unmodified.
+
+One known gap: the Athena star schema doesn't carry raw columns like
+`order_status`, `order_delivered_carrier_date`, or `order_approved_at` (only
+the derived `delivery_days`/`delivery_delay_days`/`is_late` made it into
+`fact_order_items`). Pages that reference those columns defensively check
+`if column in df.columns` first, so nothing crashes — the order-status filter
+on the Overview page just won't appear in Athena mode. Add those columns to
+`athena_star_schema.sql`'s fact table if you want full parity.
+
 ## Why a star schema instead of the flat `master` table
 
 The original `master` table is a single wide join — fine for a Streamlit app
