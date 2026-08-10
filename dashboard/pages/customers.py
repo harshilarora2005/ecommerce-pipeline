@@ -8,12 +8,10 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
-from sqlalchemy import create_engine
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.append(str(ROOT))
-
-DB_PATH = ROOT / "data" / "ecommerce.db"
+from dashboard.data_source import load_master_df
 st.set_page_config(page_title="Customers · Olist", page_icon="👥", layout="wide")
 
 st.markdown("""
@@ -61,11 +59,7 @@ SEGMENT_COLORS = {
 
 @st.cache_data(show_spinner=False)
 def _load() -> pd.DataFrame:
-    if not DB_PATH.exists():
-        return pd.DataFrame()
-    df = pd.read_sql("SELECT * FROM master", create_engine(f"sqlite:///{DB_PATH}"))
-    df["order_purchase_timestamp"] = pd.to_datetime(df["order_purchase_timestamp"], errors="coerce")
-    return df
+    return load_master_df()
 
 
 def get_data() -> pd.DataFrame:
