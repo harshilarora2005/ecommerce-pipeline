@@ -1,13 +1,14 @@
 """Main Streamlit entry — Olist E-Commerce Intelligence Dashboard."""
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 import pandas as pd
 import streamlit as st
-from sqlalchemy import create_engine
 
 ROOT = Path(__file__).resolve().parents[1]
-DB_PATH = ROOT / "data" / "ecommerce.db"
+sys.path.append(str(ROOT))
+from dashboard.data_source import load_master_df
 
 st.set_page_config(
     page_title="Olist Intelligence",
@@ -223,10 +224,9 @@ button[kind="primary"] {
 # ── Data loading ───────────────────────────────────────────────────────────────
 @st.cache_data(show_spinner="⏳ Loading warehouse…")
 def load_master() -> pd.DataFrame:
-    if not DB_PATH.exists():
-        return pd.DataFrame()
-    engine = create_engine(f"sqlite:///{DB_PATH}")
-    df = pd.read_sql("SELECT * FROM master", engine)
+    df = load_master_df()
+    if df.empty:
+        return df
     for c in ["order_purchase_timestamp", "order_delivered_customer_date",
               "order_estimated_delivery_date"]:
         if c in df.columns:
