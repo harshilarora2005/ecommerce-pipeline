@@ -1,0 +1,57 @@
+{
+  "_comment": "Attach to a dedicated IAM user for the deployed Streamlit app -- do NOT reuse your personal admin-level credentials here. Create via IAM > Users > Create user > Attach policy directly > paste this JSON. Replace <BUCKET> with your data bucket name.",
+
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AthenaQueryExecution",
+      "Effect": "Allow",
+      "Action": [
+        "athena:StartQueryExecution",
+        "athena:GetQueryExecution",
+        "athena:GetQueryResults",
+        "athena:StopQueryExecution",
+        "athena:GetWorkGroup"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "GlueCatalogReadOnly",
+      "Effect": "Allow",
+      "Action": [
+        "glue:GetTable",
+        "glue:GetTables",
+        "glue:GetDatabase",
+        "glue:GetDatabases",
+        "glue:GetPartitions"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ReadStarSchemaAndProcessedData",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::<BUCKET>",
+        "arn:aws:s3:::<BUCKET>/processed/*",
+        "arn:aws:s3:::<BUCKET>/star/*"
+      ]
+    },
+    {
+      "Sid": "WriteAthenaQueryResults",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:ListBucket"
+      ],
+      "Resource": [
+        "arn:aws:s3:::<BUCKET>",
+        "arn:aws:s3:::<BUCKET>/athena-results/*"
+      ]
+    }
+  ]
+}
