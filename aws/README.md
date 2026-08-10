@@ -75,6 +75,41 @@ the derived `delivery_days`/`delivery_delay_days`/`is_late` made it into
 on the Overview page just won't appear in Athena mode. Add those columns to
 `athena_star_schema.sql`'s fact table if you want full parity.
 
+## Deploying the dashboard publicly
+
+**Streamlit Community Cloud** (streamlit.io) is the recommended host — it's
+free hosting entirely outside AWS, so it doesn't touch any AWS credits or
+trial allowances. Deploy: connect your GitHub repo at share.streamlit.io,
+point it at `dashboard/app.py`, done.
+
+**The one real ongoing AWS cost**: every page load fires an Athena query.
+Athena isn't part of a free-tier credit pool — it's pay-per-TB-scanned
+(~$5/TB) always. At this dataset's size with Parquet + `order_month`
+partitioning, each query costs a fraction of a cent, but it isn't literally
+free if the app gets real traffic. A billing alarm (see earlier setup) is
+worth keeping active while this is publicly deployed.
+
+**Credentials**: don't reuse your personal/admin AWS credentials for the
+deployed app. Create a dedicated IAM user, attach
+`iam_policy_streamlit_app.json` from this folder (scoped to just Athena
+query execution + S3 read on `processed/`/`star/` + S3 read-write on the
+`athena-results/` prefix), and generate an access key for that user
+specifically.
+
+In Streamlit Community Cloud, go to your app's **Settings → Secrets** and
+add:
+```toml
+AWS_ACCESS_KEY_ID = "..."
+AWS_SECRET_ACCESS_KEY = "..."
+AWS_DEFAULT_REGION = "your-region"
+DATA_SOURCE = "athena"
+ATHENA_S3_STAGING_DIR = "s3://your-bucket-name/athena-results/"
+ATHENA_REGION = "your-region"
+```
+`app.py` mirrors these into env vars at startup so `pyathena`/`boto3`
+authenticate the same way they would locally — no code changes needed
+beyond what's already in this patch set.
+
 ## Why a star schema instead of the flat `master` table
 
 The original `master` table is a single wide join — fine for a Streamlit app
