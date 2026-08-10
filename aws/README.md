@@ -1,8 +1,8 @@
 # AWS migration
 
-Ports this pipeline from local pandas + SQLite to an S3 → Glue → Redshift
-Serverless architecture, so it reflects an actual cloud data platform rather
-than a script on one laptop.
+Ports this pipeline from local pandas + SQLite to an S3 → Glue → Athena
+architecture, so it reflects an actual cloud data platform rather than a
+script on one laptop.
 
 ## Pipeline
 
@@ -10,14 +10,17 @@ than a script on one laptop.
 S3 (raw CSVs) → Glue (Python Shell, reuses etl.py logic) → S3 (Parquet, partitioned by month)
                                                                     │
                                                                     ▼
-                                                      Redshift Serverless (star schema)
+                                                    Athena (external tables + CTAS star schema)
                                                                     │
                                                                     ▼
                                                               QuickSight
 ```
 
-Athena can also query the Parquet in S3 directly via the Glue Data Catalog,
-without touching Redshift — useful for ad-hoc exploration.
+Athena was chosen over Redshift on purpose: Redshift (Serverless or
+provisioned) isn't part of AWS's permanent Free Tier — its $300/90-day
+trial credit currently requires being on AWS's Paid plan. Athena is
+genuinely serverless and pay-per-query-scanned, so it stays within Free
+Tier at this data size with no provisioning step at all.
 
 ## Setup order
 
@@ -28,21 +31,30 @@ without touching Redshift — useful for ad-hoc exploration.
    ```
    python aws/glue_etl.py --bucket your-bucket-name
    ```
-3. **`redshift_schema.sql`** — creates the star schema (`fact_order_items` +
-   `dim_customer`/`dim_seller`/`dim_product`/`dim_date`) in Redshift
-   Serverless. Run once in the Redshift query editor.
-4. **`redshift_load.sql`** — `COPY`s the Glue output from S3 into the star
-   schema. Replace `<BUCKET>` and `<IAM_ROLE_ARN>` with your values before
-   running (the Redshift Serverless namespace needs an IAM role with
-   `s3:GetObject` on the bucket).
+3. **`athena_external_tables.sql`** — registers `master_raw`, `customers_raw`,
+   `sellers_raw`, `products_raw` as external tables over the Glue Parquet
+   output, using the Glue Data Catalog as the metastore. Run once in the
+   Athena query editor (replace `<BUCKET>` first).
+4. **`athena_star_schema.sql`** — `CREATE TABLE AS SELECT` statements that
+   materialize `fact_order_items` + `dim_customer`/`dim_seller`/`dim_product`/
+   `dim_date` as their own Parquet files in S3, same shape as a Redshift star
+   schema but with nothing to provision.
+
+### Optional: Redshift instead of Athena
+
+`redshift_schema.sql` and `redshift_load.sql` are still in this folder if you
+later switch to AWS's Paid plan and want the $300 Redshift Serverless trial —
+same star schema, loaded via `COPY` instead of CTAS. Not needed for the
+default path above.
 
 ## Why a star schema instead of the flat `master` table
 
 The original `master` table is a single wide join — fine for a Streamlit app
 querying with pandas, but it repeats customer/seller/product attributes on
 every row. `fact_order_items` + dimensions is closer to what BI tooling
-(QuickSight, Redshift) and BIE-style SQL (window functions, cohort joins)
-actually expect, and it's the schema shape that comes up in interviews.
+(QuickSight, Athena, Redshift) and BIE-style SQL (window functions, cohort
+joins) actually expect, and it's the schema shape that comes up in
+interviews.
 
 ## Free tier / cost notes
 
@@ -50,11 +62,13 @@ actually expect, and it's the schema shape that comes up in interviews.
   jobs — this dataset (100K+ rows, ~8 small CSVs) runs well within it. Don't
   leave a Glue *dev endpoint* running; those aren't part of the free tier
   and bill hourly.
-- **Redshift Serverless**: bills per RPU-second while a query runs, not for
-  idle time — much safer for a portfolio project than a provisioned cluster.
-  Still, set a usage limit (Redshift console → Serverless → Limits) as a
-  backstop.
-- **S3 / Athena**: effectively free at this data size.
+- **Athena**: billed per TB scanned (a few cents at this data size), nothing
+  to provision or leave running. Parquet + the `order_month` partitioning
+  keeps scans small.
+- **S3**: effectively free at this data size.
+- **QuickSight**: has a 30-day free trial, then bills per user/month — it's
+  not part of the permanent free tier. Fine to use during the trial for
+  dashboard screenshots, just don't leave it subscribed afterward.
 - Set a billing alarm (Billing → Budgets) before running any of this if you
   haven't already — see the setup steps from earlier in this conversation.
 
