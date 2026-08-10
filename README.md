@@ -79,12 +79,4 @@ Highlights:
 - Prophet 90-day forecast: ~12% MAPE on 30-day holdout.
 - Churn model AUC ≈ 0.80; top drivers: recency, frequency, avg review, delivery days.
 
-## 🛣️ Roadmap
-- [x] ETL pipeline → SQLite
-- [x] EDA notebook (6 business questions)
-- [x] RFM segmentation (9 segments)
-- [x] Streamlit multi-page dashboard with filters
-- [x] Prophet forecasting + holdout eval
-- [x] Churn classification model
-- [ ] Deploy to Streamlit Community Cloud
-- [ ] Add Folium choropleth (Brazil GeoJSON)
+

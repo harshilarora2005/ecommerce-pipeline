@@ -1,4 +1,3 @@
-"""Main Streamlit entry — Olist E-Commerce Intelligence Dashboard."""
 from __future__ import annotations
 
 import os
@@ -10,13 +9,6 @@ import streamlit as st
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
 
-# On Streamlit Community Cloud, AWS creds live in st.secrets (set via the
-# app's Settings > Secrets UI) rather than a local ~/.aws/credentials file.
-# Mirror them into env vars here, before importing data_source, so boto3/
-# pyathena pick them up the same way they would locally. No-ops locally if
-# you're already using `aws configure` / env vars — st.secrets is empty then,
-# and older Streamlit versions raise if no secrets.toml exists at all, so
-# this is wrapped defensively.
 try:
     for _key in (
         "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_DEFAULT_REGION",
@@ -304,7 +296,6 @@ def apply_filters(df: pd.DataFrame) -> pd.DataFrame:
 
     filtered = df[mask].copy()
 
-    # Reset button
     st.sidebar.markdown("---")
     if st.sidebar.button("↺ Reset filters", use_container_width=True):
         st.cache_data.clear()
@@ -318,7 +309,6 @@ def apply_filters(df: pd.DataFrame) -> pd.DataFrame:
     return filtered
 
 
-# ── Error states ───────────────────────────────────────────────────────────────
 def show_no_data_error():
     st.markdown("""
     <div style="

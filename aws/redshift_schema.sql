@@ -1,14 +1,3 @@
--- ---------------------------------------------------------------------------
--- Redshift Serverless: star schema for the Olist BI layer.
---
--- Replaces the flat `master` table (SQLite) with a proper fact + dimension
--- model so window-function-heavy BIE queries (cohort retention, YoY growth,
--- funnel drop-off) run efficiently and read naturally.
---
--- Run this once against a Redshift Serverless namespace/workgroup before
--- loading data (see redshift_load.sql for the COPY commands).
--- ---------------------------------------------------------------------------
-
 CREATE SCHEMA IF NOT EXISTS olist;
 
 -- ---------------------------------------------------------------------------

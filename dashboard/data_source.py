@@ -1,20 +1,3 @@
-"""
-Shared data loader for the dashboard.
-
-Set DATA_SOURCE=athena to pull from the Athena star schema instead of
-the local SQLite file. Defaults to sqlite, so nothing breaks for anyone
-who hasn't set up AWS yet — this is purely additive.
-
-Athena mode requires:
-    pip install "pyathena[pandas]"
-    aws configure   (or any boto3-recognized credentials)
-    ATHENA_S3_STAGING_DIR=s3://<bucket>/athena-results/
-    ATHENA_REGION=<region>          (defaults to us-east-1)
-
-Usage (unchanged call sites, just swap the import):
-    from dashboard.data_source import load_master_df
-    df = load_master_df()
-"""
 from __future__ import annotations
 import os
 from pathlib import Path
@@ -28,10 +11,6 @@ DB_PATH = ROOT / "data" / "ecommerce.db"
 
 DATA_SOURCE = os.environ.get("DATA_SOURCE", "sqlite").lower()
 
-# The star schema replaced the flat `master` table with fact + dims.
-# This query joins them back into the same shape the dashboard pages
-# already expect, so no page logic downstream of load_master_df() needs
-# to change.
 ATHENA_MASTER_QUERY = """
 SELECT
     f.order_id, f.order_item_id, f.product_id, f.seller_id, f.customer_id,
@@ -54,12 +33,6 @@ LEFT JOIN olist.dim_product  p ON f.product_id  = p.product_id
 
 @lru_cache(maxsize=1)
 def load_master_df() -> pd.DataFrame:
-    """Load the master-shaped dataframe from whichever backend is configured.
-
-    Cached at the process level (lru_cache) on top of whatever Streamlit
-    caching individual pages add, since this can run once per session
-    regardless of how many pages call it.
-    """
     if DATA_SOURCE == "athena":
         df = _load_from_athena()
     else:
@@ -80,7 +53,7 @@ def _load_from_sqlite() -> pd.DataFrame:
 
 
 def _load_from_athena() -> pd.DataFrame:
-    from pyathena import connect  # lazy import, sqlite mode doesn't need it
+    from pyathena import connect 
 
     staging_dir = os.environ.get("ATHENA_S3_STAGING_DIR")
     if not staging_dir:
