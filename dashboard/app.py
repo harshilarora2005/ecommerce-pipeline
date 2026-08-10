@@ -1,6 +1,7 @@
 """Main Streamlit entry — Olist E-Commerce Intelligence Dashboard."""
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 import pandas as pd
@@ -8,6 +9,24 @@ import streamlit as st
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
+
+# On Streamlit Community Cloud, AWS creds live in st.secrets (set via the
+# app's Settings > Secrets UI) rather than a local ~/.aws/credentials file.
+# Mirror them into env vars here, before importing data_source, so boto3/
+# pyathena pick them up the same way they would locally. No-ops locally if
+# you're already using `aws configure` / env vars — st.secrets is empty then,
+# and older Streamlit versions raise if no secrets.toml exists at all, so
+# this is wrapped defensively.
+try:
+    for _key in (
+        "AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_DEFAULT_REGION",
+        "DATA_SOURCE", "ATHENA_S3_STAGING_DIR", "ATHENA_REGION",
+    ):
+        if _key in st.secrets and _key not in os.environ:
+            os.environ[_key] = st.secrets[_key]
+except Exception:
+    pass
+
 from dashboard.data_source import load_master_df
 
 st.set_page_config(
